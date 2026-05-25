@@ -1,0 +1,152 @@
+@import "tailwindcss";
+
+/*
+  OHMS design system — "Soft And Comfort".
+  Direction: soft, premium, editorial kidswear. Warm cream canvas, fresh leaf
+  green brand, generous rounding, layered soft shadows. Tokens in OKLCH.
+*/
+
+@theme {
+  /* Brand greens (from the OHMS leaf logo) */
+  --color-leaf-50: oklch(0.97 0.03 145);
+  --color-leaf-100: oklch(0.94 0.06 145);
+  --color-leaf-200: oklch(0.88 0.1 144);
+  --color-leaf-300: oklch(0.8 0.14 143);
+  --color-leaf-400: oklch(0.72 0.16 142);
+  --color-leaf-500: oklch(0.64 0.17 142);
+  --color-leaf-600: oklch(0.55 0.15 144);
+  --color-leaf-700: oklch(0.45 0.13 146);
+  --color-leaf-800: oklch(0.37 0.1 148);
+  --color-leaf-900: oklch(0.3 0.07 150);
+
+  /* Warm accent (soft coral) for playful highlights + sale tags */
+  --color-coral-100: oklch(0.94 0.04 40);
+  --color-coral-300: oklch(0.84 0.1 42);
+  --color-coral-500: oklch(0.74 0.15 38);
+  --color-coral-600: oklch(0.66 0.16 35);
+
+  /* Soft sky for secondary chips */
+  --color-sky-soft: oklch(0.9 0.05 230);
+
+  /* Semantic tokens */
+  --color-background: oklch(0.99 0.008 95);
+  --color-surface: oklch(1 0 0);
+  --color-surface-sunken: oklch(0.97 0.01 110);
+  --color-foreground: oklch(0.26 0.03 152);
+  --color-muted: oklch(0.55 0.02 150);
+  --color-border: oklch(0.91 0.012 130);
+  --color-primary: var(--color-leaf-500);
+  --color-primary-deep: var(--color-leaf-700);
+  --color-accent: var(--color-coral-500);
+
+  /* Typography */
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  /* Radii — soft and friendly */
+  --radius-card: 1.25rem;
+  --radius-pill: 999px;
+
+  /* Layered soft shadows */
+  --shadow-soft: 0 1px 2px oklch(0.4 0.05 150 / 0.04),
+    0 8px 24px oklch(0.4 0.05 150 / 0.06);
+  --shadow-lift: 0 2px 6px oklch(0.4 0.05 150 / 0.06),
+    0 18px 40px oklch(0.4 0.05 150 / 0.1);
+
+  /* Motion */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Fluid type scale */
+  --text-hero: clamp(2.5rem, 1.2rem + 5.5vw, 5.5rem);
+  --text-section: clamp(1.75rem, 1rem + 2.8vw, 3rem);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html {
+    scroll-behavior: smooth;
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv01";
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  ::selection {
+    background: var(--color-leaf-200);
+    color: var(--color-leaf-900);
+  }
+  /* Accessible focus ring */
+  :focus-visible {
+    outline: 2px solid var(--color-leaf-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+  .text-pretty { text-wrap: pretty; }
+
+  /* Subtle grain/atmosphere for hero surfaces */
+  .grain::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(
+      oklch(0.4 0.05 150 / 0.04) 1px,
+      transparent 1px
+    );
+    background-size: 4px 4px;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+
+  .leaf-gradient {
+    background: linear-gradient(
+      135deg,
+      var(--color-leaf-100) 0%,
+      var(--color-leaf-50) 40%,
+      var(--color-background) 100%
+    );
+  }
+
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .marquee {
+    animation: marquee 28s linear infinite;
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fade-up {
+    animation: fade-up 0.6s var(--ease-out-expo) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .marquee { animation: none; }
+}
