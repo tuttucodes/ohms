@@ -73,8 +73,10 @@ export function productSlug(name: string, id: string): string {
   return `${base}-${id}`;
 }
 
-/** Extract the product id from a slug produced by productSlug. */
+/** Extract the product id from a slug produced by productSlug.
+ * The id is always the final hyphen-delimited segment (seed ids are numeric,
+ * custom admin ids are alphanumeric like "CMPLHHTWZ"). */
 export function idFromSlug(slug: string): string {
-  const m = slug.match(/-(\d+)$/);
-  return m ? m[1] : slug;
+  const idx = slug.lastIndexOf("-");
+  return idx === -1 ? slug : slug.slice(idx + 1);
 }
