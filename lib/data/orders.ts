@@ -43,7 +43,8 @@ export interface NewOrderInput {
 export async function createOrder(input: NewOrderInput): Promise<Order> {
   const now = new Date().toISOString();
   const order: Order = {
-    id: `OHMS-${Date.now().toString(36).toUpperCase()}-${randomUUID().slice(0, 4).toUpperCase()}`,
+    // 8 hex chars (~4.3B) so order ids can't be enumerated to scrape customer PII.
+    id: `OHMS-${Date.now().toString(36).toUpperCase()}-${randomUUID().replace(/-/g, "").slice(0, 8).toUpperCase()}`,
     items: input.items,
     customer: input.customer,
     subtotal: input.subtotal,

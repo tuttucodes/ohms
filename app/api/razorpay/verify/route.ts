@@ -31,6 +31,11 @@ export async function POST(request: Request) {
     if (!razorpayOrderId || !razorpayPaymentId || !signature) {
       return fail("Missing payment verification fields");
     }
+    // Cross-check the client-supplied Razorpay order id against the one stored
+    // for this order — prevents reusing a valid payment from a different order.
+    if (order.razorpayOrderId !== razorpayOrderId) {
+      return fail("Order id mismatch", 400);
+    }
     const valid = verifyPaymentSignature({
       razorpayOrderId,
       razorpayPaymentId,

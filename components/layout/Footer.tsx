@@ -86,16 +86,22 @@ export function Footer() {
       </div>
 
       <div className="border-t border-border">
-        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} OHMS · Soft And Comfort. All rights reserved.</p>
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-muted sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            © {new Date().getFullYear()} {siteConfig.legalName}. All rights reserved.
+          </p>
           <div className="flex flex-wrap gap-4">
             <a href={`mailto:${siteConfig.contact.email}`} className="inline-flex items-center gap-1.5 hover:text-leaf-700">
               <Mail className="h-3.5 w-3.5" /> {siteConfig.contact.email}
             </a>
-            <a href={`tel:${siteConfig.contact.phone}`} className="inline-flex items-center gap-1.5 hover:text-leaf-700">
+            <a href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`} className="inline-flex items-center gap-1.5 hover:text-leaf-700">
               <Phone className="h-3.5 w-3.5" /> {siteConfig.contact.phone}
             </a>
           </div>
+        </div>
+        <div className="border-t border-border/60 py-3 text-center text-[0.7rem] text-muted/80">
+          Developed by{" "}
+          <span className="font-semibold text-leaf-700">Kernel &amp; Oak</span>
         </div>
       </div>
     </footer>

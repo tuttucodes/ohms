@@ -3,21 +3,30 @@
 
 export const siteConfig = {
   name: "OHMS",
+  legalName: "Ohms Fusion Knitwear India Private Limited",
   tagline: "Soft And Comfort",
   description:
-    "OHMS makes soft, comfy, skin-friendly clothing and essentials for babies and kids. Thoughtfully designed, gentle on little ones, easy on parents.",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://ohms.example.com",
-  // Placeholder contact details — replace with real OHMS details.
+    "OHMS makes soft, comfy, skin-friendly clothing and essentials for babies and kids. Knitted with care in Tirupur, India — gentle on little ones, easy on parents.",
+  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://ohmsclothings.com",
   contact: {
-    email: "care@ohms.com",
-    phone: "+91 90000 00000",
-    whatsapp: "+91 90000 00000",
-    address: "OHMS Retail Pvt. Ltd., Bengaluru, Karnataka, India",
+    email: "info@ohmsclothings.com",
+    phone: "+91 99948 99229",
+    phoneAlt: "+91 99948 33328",
+    whatsapp: "+91 99948 99229",
+    address:
+      "Ohms Fusion Knitwear India Pvt. Ltd., 6, Semmedu Thottam, Kangayam Road, Tirupur, Tamil Nadu, India – 641 604",
+    city: "Tirupur",
+  },
+  founder: {
+    name: "Manikandan Muthusamy",
+    role: "Founder & Managing Director",
+    linkedin: "https://www.linkedin.com/in/mkohms/",
   },
   social: {
-    instagram: "https://instagram.com/ohms",
-    facebook: "https://facebook.com/ohms",
-    youtube: "https://youtube.com/@ohms",
+    instagram: "https://instagram.com/ohmsclothings",
+    facebook: "https://facebook.com/ohmsclothings",
+    youtube: "https://youtube.com/@ohmsclothings",
+    linkedin: "https://www.linkedin.com/in/mkohms/",
   },
   // Free shipping threshold (INR) and flat fee below it.
   shipping: {
@@ -25,6 +34,7 @@ export const siteConfig = {
     flatFee: 49,
   },
   currency: "INR",
+  developer: { name: "Kernel & Oak" },
 } as const;
 
 // Marketing copy for the announcement bar (rotates).

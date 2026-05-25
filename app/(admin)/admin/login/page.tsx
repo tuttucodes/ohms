@@ -60,9 +60,11 @@ function LoginForm() {
         <Lock className="h-4 w-4" />
         {loading ? "Signing in…" : "Sign in"}
       </Button>
-      <p className="mt-4 text-center text-xs text-muted">
-        Default dev password: <code className="font-mono">ohms-admin</code>
-      </p>
+      {process.env.NODE_ENV === "development" && (
+        <p className="mt-4 text-center text-xs text-muted">
+          Default dev password: <code className="font-mono">ohms-admin</code>
+        </p>
+      )}
     </form>
   );
 }
