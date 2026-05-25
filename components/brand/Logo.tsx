@@ -10,8 +10,9 @@ interface LogoProps {
 }
 
 /**
- * OHMS brand logo. `full` shows the leaf badge + wordmark; `mark` is just the badge.
- * Drop a higher-fidelity /logo.svg or /public/logo.png to override the vector art.
+ * OHMS brand logo built from the real leaf mark (public/ohms-logo.png).
+ * `full` = mark + "OHMS / Soft And Comfort" wordmark; `mark` = just the badge.
+ * Pass a height via `className` (e.g. "h-10"); the mark scales to fill it.
  */
 export function Logo({
   variant = "full",
@@ -19,25 +20,40 @@ export function Logo({
   href = "/",
   priority = false,
 }: LogoProps) {
-  const src = variant === "mark" ? "/logo-mark.svg" : "/logo.svg";
-  const width = variant === "mark" ? 44 : 150;
-  const height = variant === "mark" ? 44 : 56;
+  const height = className ?? "h-10";
 
-  const img = (
+  const mark = (
     <Image
-      src={src}
-      alt="OHMS — Soft And Comfort"
-      width={width}
-      height={height}
+      src="/ohms-logo.png"
+      alt="OHMS"
+      width={120}
+      height={120}
       priority={priority}
-      className={cn("h-auto w-auto select-none", className)}
+      className="h-full w-auto select-none"
     />
   );
 
-  if (href === null) return img;
+  const content =
+    variant === "mark" ? (
+      <span className={cn("inline-flex", height)}>{mark}</span>
+    ) : (
+      <span className={cn("inline-flex items-center gap-2", height)}>
+        {mark}
+        <span className="flex flex-col justify-center leading-none">
+          <span className="font-display text-xl font-bold tracking-tight text-leaf-700 sm:text-2xl">
+            OHMS
+          </span>
+          <span className="mt-0.5 text-[0.55rem] font-medium uppercase tracking-[0.16em] text-foreground/70">
+            Soft And Comfort
+          </span>
+        </span>
+      </span>
+    );
+
+  if (href === null) return content;
   return (
     <Link href={href} aria-label="OHMS home" className="inline-flex items-center">
-      {img}
+      {content}
     </Link>
   );
 }

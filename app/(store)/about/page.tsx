@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Leaf, Heart, Sparkles, ShieldCheck, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/Logo";
@@ -8,7 +9,7 @@ import { siteConfig } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "About",
-  description: siteConfig.description,
+  description: `${siteConfig.description} Founded by ${siteConfig.founder.name}.`,
 };
 
 const values = [
@@ -36,16 +37,11 @@ const values = [
 
 export default function AboutPage() {
   const { founder } = siteConfig;
-  const initials = founder.name
-    .split(" ")
-    .map((n) => n[0])
-    .slice(0, 2)
-    .join("");
 
   return (
     <div>
       <section className="leaf-gradient grain relative">
-        <div className="mx-auto max-w-3xl px-4 py-16 text-center sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-3xl px-4 py-14 text-center sm:px-6 sm:py-20">
           <span className="text-xs font-semibold uppercase tracking-[0.2em] text-leaf-600">
             Our story
           </span>
@@ -54,10 +50,7 @@ export default function AboutPage() {
           </h1>
           <p className="mt-5 text-pretty text-lg leading-relaxed text-leaf-900/70">
             OHMS is born in Tirupur — India&apos;s knitwear capital — where soft
-            cotton and skilled hands have dressed the world for generations. We
-            channel that craft into clothing made for the people who matter most:
-            babies and kids. Soft, breathable, skin-friendly essentials that move
-            with little ones through every nap, giggle and adventure.
+            cotton and skilled hands have dressed the world for generations.
           </p>
           <p className="mt-4 inline-flex items-center gap-1.5 text-sm text-leaf-900/60">
             <MapPin className="h-4 w-4" /> {siteConfig.legalName} · Tirupur, India
@@ -65,7 +58,68 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <section id="promise" className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+      {/* Founder — the focus */}
+      <section className="mx-auto max-w-5xl px-4 py-16 sm:px-6">
+        <div className="grid items-center gap-10 md:grid-cols-[300px_1fr]">
+          <div className="flex flex-col items-center">
+            <div className="relative">
+              <div className="relative h-56 w-56 overflow-hidden rounded-[2rem] bg-leaf-100 shadow-[var(--shadow-lift)] ring-4 ring-leaf-100">
+                <Image
+                  src="/founder.jpg"
+                  alt={founder.name}
+                  fill
+                  sizes="224px"
+                  className="object-cover"
+                  priority
+                />
+              </div>
+              <span className="absolute -bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-leaf-600 px-4 py-1.5 text-xs font-semibold text-white shadow-[var(--shadow-soft)]">
+                Founder
+              </span>
+            </div>
+            <a
+              href={founder.linkedin}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-8 inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-leaf-700 transition-colors hover:bg-leaf-50"
+            >
+              <LinkedinIcon className="h-4 w-4" /> Connect on LinkedIn
+            </a>
+          </div>
+
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-leaf-600">
+              Meet the founder
+            </span>
+            <h2 className="mt-2 text-[clamp(1.75rem,1rem+2.5vw,2.75rem)] leading-tight">
+              {founder.name}
+            </h2>
+            <p className="mt-1 text-muted">
+              {founder.role} · {siteConfig.legalName}
+            </p>
+            <div className="mt-5 space-y-4 text-pretty leading-relaxed text-foreground/80">
+              <p>
+                A Tirupur knitwear entrepreneur, {founder.name.split(" ")[0]} built
+                OHMS on one conviction: the clothes closest to a child&apos;s skin
+                should be the softest, safest and most comfortable of all.
+              </p>
+              <p>
+                From sourcing the gentlest cottons to obsessing over every seam and
+                finish, the mission is personal — to give babies and kids garments
+                that feel like a hug and stand up to real, playful childhoods, while
+                carrying forward Tirupur&apos;s legacy of craft.
+              </p>
+              <blockquote className="border-l-4 border-leaf-300 pl-4 font-display text-lg italic text-leaf-800">
+                &ldquo;Soft And Comfort isn&apos;t a tagline — it&apos;s the promise
+                we knit into every single piece.&rdquo;
+              </blockquote>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Promise */}
+      <section id="promise" className="mx-auto max-w-5xl px-4 pb-16 sm:px-6">
         <h2 className="text-center text-section">Our promise</h2>
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {values.map((v) => {
@@ -83,41 +137,6 @@ export default function AboutPage() {
               </div>
             );
           })}
-        </div>
-      </section>
-
-      {/* Founder */}
-      <section className="mx-auto max-w-4xl px-4 pb-16 sm:px-6">
-        <div className="grid items-center gap-8 rounded-[var(--radius-card)] border border-border bg-surface p-6 sm:p-10 md:grid-cols-[auto_1fr]">
-          <div className="flex flex-col items-center gap-3">
-            <div className="grid h-28 w-28 place-items-center rounded-full bg-leaf-100 font-display text-3xl font-bold text-leaf-700 shadow-[var(--shadow-soft)]">
-              {initials}
-            </div>
-            <a
-              href={founder.linkedin}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-leaf-700 transition-colors hover:bg-leaf-50"
-            >
-              <LinkedinIcon className="h-4 w-4" /> Connect on LinkedIn
-            </a>
-          </div>
-          <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-leaf-600">
-              From the founder
-            </span>
-            <h2 className="mt-2 font-display text-2xl font-semibold">
-              {founder.name}
-            </h2>
-            <p className="text-sm text-muted">{founder.role}, OHMS</p>
-            <p className="mt-4 text-pretty leading-relaxed text-foreground/80">
-              &ldquo;We started OHMS with a simple idea — that the clothes closest
-              to a child&apos;s skin should be the softest, safest and most
-              comfortable of all. Rooted in Tirupur&apos;s knitwear heritage, every
-              OHMS piece is made to feel like a hug and to last through real,
-              playful childhoods.&rdquo;
-            </p>
-          </div>
         </div>
       </section>
 
