@@ -11,7 +11,8 @@ import { Pagination } from "@/components/shop/Pagination";
 export const metadata: Metadata = {
   title: "Shop all",
   description:
-    "Browse OHMS soft, comfy kidswear — bodysuits, nightwear, innerwear, dresses and more.",
+    "Browse OHMS soft, comfy kidswear — bodysuits, nightwear, innerwear, dresses and more. Gentle fabrics for babies and kids.",
+  alternates: { canonical: "/shop" },
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;

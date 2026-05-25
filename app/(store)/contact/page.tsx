@@ -5,7 +5,9 @@ import { ContactForm } from "@/components/contact/ContactForm";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Get in touch with the OHMS care team.",
+  description:
+    "Get in touch with the OHMS care team in Tirupur — sizing, orders, returns and wholesale enquiries.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

@@ -3,13 +3,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChevronRight, Star, Truck, RefreshCw, ShieldCheck, Leaf } from "lucide-react";
 import { getProductById, getRelated } from "@/lib/data/products";
-import { idFromSlug, productImage, ageLabel } from "@/lib/utils";
+import { idFromSlug, productImage, ageLabel, productSlug } from "@/lib/utils";
 import { Price } from "@/components/product/Price";
 import { Badge } from "@/components/ui/badge";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { AddToCart } from "@/components/product/AddToCart";
 import { ProductRail } from "@/components/product/ProductRail";
 import { SectionHeading } from "@/components/layout/SectionHeading";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { productSchema, breadcrumbSchema } from "@/lib/seo";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -21,12 +23,16 @@ export async function generateMetadata({
   const { slug } = await params;
   const product = getProductById(idFromSlug(slug));
   if (!product) return { title: "Product not found" };
+  const canonical = `/product/${productSlug(product.name, product.id)}`;
   return {
     title: product.name,
     description: product.description,
+    alternates: { canonical },
     openGraph: {
+      type: "website",
       title: product.name,
       description: product.description,
+      url: canonical,
       images: [productImage(product.images[0], "full")],
     },
   };
@@ -41,6 +47,18 @@ export default async function ProductPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-10">
+      <JsonLd data={productSchema(product)} />
+      <JsonLd
+        data={breadcrumbSchema([
+          { name: "Home", path: "/" },
+          { name: "Shop", path: "/shop" },
+          {
+            name: product.subcategory,
+            path: `/shop?subcategory=${encodeURIComponent(product.subcategory)}`,
+          },
+          { name: product.name, path: `/product/${productSlug(product.name, product.id)}` },
+        ])}
+      />
       {/* Breadcrumb */}
       <nav className="mb-6 flex items-center gap-1.5 text-xs text-muted">
         <Link href="/" className="hover:text-leaf-700">Home</Link>

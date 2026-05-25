@@ -10,6 +10,7 @@ import { siteConfig } from "@/lib/config";
 export const metadata: Metadata = {
   title: "About",
   description: `${siteConfig.description} Founded by ${siteConfig.founder.name}.`,
+  alternates: { canonical: "/about" },
 };
 
 const values = [

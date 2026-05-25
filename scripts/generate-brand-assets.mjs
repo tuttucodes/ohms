@@ -36,11 +36,12 @@ import { constants } from "node:fs";
 // ---------------------------------------------------------------------------
 
 const LEAF_GREEN = "#5aa630";
-const LEAF_GREEN_DEEP = "#3f8f2e";
+const LEAF_GREEN_DEEP = "#2e6f2e";
 const LEAF_GREEN_SOFT = "#8ed05a";
 const CREAM = "#fdfdf8";
 const INK = "#26331f";
 const SUBTLE_INK = "#52614a";
+const CORAL = "#e8744f";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(__dirname, "..");
@@ -114,6 +115,28 @@ async function markBuffer(sharp, source, size) {
       fit: "contain",
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
+    .png()
+    .toBuffer();
+}
+
+/**
+ * Load the source mark, scaled to `size`, with its surrounding white box
+ * clipped away by a circular mask. The OHMS mark is a round leaf-in-a-disc on a
+ * solid white background; clipping to a circle (instead of keying out white)
+ * removes the box cleanly while preserving the glossy highlights inside the
+ * leaf. Returns a transparent PNG buffer so the gradient shows through.
+ */
+async function circularMarkBuffer(sharp, source, size) {
+  const mark = await markBuffer(sharp, source, size);
+  // Inset the clip slightly so the soft green ring edge isn't cropped flat.
+  const r = size / 2 - 1;
+  const mask = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
+      `<circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="#fff"/>` +
+      `</svg>`
+  );
+  return sharp(mark)
+    .composite([{ input: mask, blend: "dest-in" }])
     .png()
     .toBuffer();
 }
@@ -230,182 +253,200 @@ async function makeFaviconIco(sharp, source) {
 }
 
 /**
- * Build the OG card SVG overlay (text + decorative marks). Rendered to a buffer
- * and composited over a gradient canvas. The leaf mark is composited separately
- * as a raster so it stays crisp.
+ * Shared gradient + texture defs and base layers for the OG cards. Defining
+ * these once keeps the cream→leaf background, soft glow, and faint dot texture
+ * consistent between the wide and square variants.
  */
-function ogOverlaySvg(width, height, layout) {
-  const { wordmarkSize, taglineSize, eyebrowSize, textX, baselineY } = layout;
-  const wordmarkY = baselineY;
-  const taglineY = wordmarkY + taglineSize + 28;
-  const eyebrowY = wordmarkY - wordmarkSize - 18;
+function ogDefs() {
+  return `
+    <defs>
+      <linearGradient id="bg" x1="0" y1="0" x2="0.85" y2="1">
+        <stop offset="0%" stop-color="${CREAM}"/>
+        <stop offset="55%" stop-color="#f3f8ea"/>
+        <stop offset="100%" stop-color="#e1efce"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="50%" cy="50%" r="55%">
+        <stop offset="0%" stop-color="${LEAF_GREEN_SOFT}" stop-opacity="0.50"/>
+        <stop offset="55%" stop-color="${LEAF_GREEN}" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="${LEAF_GREEN}" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="wordFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="${LEAF_GREEN}"/>
+        <stop offset="100%" stop-color="${LEAF_GREEN_DEEP}"/>
+      </linearGradient>
+      <!-- Faint dot texture, tiled across the whole canvas -->
+      <pattern id="dots" width="46" height="46" patternUnits="userSpaceOnUse"
+        patternTransform="rotate(8)">
+        <circle cx="6" cy="6" r="2.4" fill="${LEAF_GREEN}" fill-opacity="0.05"/>
+      </pattern>
+    </defs>`;
+}
+
+/**
+ * Build the wide OG card SVG overlay (background, texture, glow ring, and all
+ * type). The leaf mark is composited separately as a raster so it stays crisp.
+ *
+ * Layout: left-aligned editorial lockup (eyebrow → OHMS wordmark + tagline →
+ * value headline → location line) with the leaf mark seated on the right inside
+ * a soft halo. No white card, so the gradient shows through behind the mark.
+ */
+function ogOverlaySvg(width, height, markCx, markCy, markR) {
+  const textX = 92;
 
   return Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
-      <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${CREAM}"/>
-          <stop offset="58%" stop-color="#f1f7e8"/>
-          <stop offset="100%" stop-color="#e3f0d2"/>
-        </linearGradient>
-        <radialGradient id="glow" cx="78%" cy="22%" r="60%">
-          <stop offset="0%" stop-color="${LEAF_GREEN_SOFT}" stop-opacity="0.42"/>
-          <stop offset="60%" stop-color="${LEAF_GREEN}" stop-opacity="0.10"/>
-          <stop offset="100%" stop-color="${LEAF_GREEN}" stop-opacity="0"/>
-        </radialGradient>
-        <linearGradient id="wordFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${LEAF_GREEN}"/>
-          <stop offset="100%" stop-color="${LEAF_GREEN_DEEP}"/>
-        </linearGradient>
-      </defs>
+      ${ogDefs()}
 
-      <!-- Base gradient + soft top-right glow -->
+      <!-- Base gradient, faint dot texture, and a glow centered on the mark -->
       <rect x="0" y="0" width="${width}" height="${height}" fill="url(#bg)"/>
-      <rect x="0" y="0" width="${width}" height="${height}" fill="url(#glow)"/>
+      <rect x="0" y="0" width="${width}" height="${height}" fill="url(#dots)"/>
+      <radialGradient id="markGlow" cx="${(markCx / width) * 100}%" cy="${(markCy / height) * 100}%" r="42%">
+        <stop offset="0%" stop-color="${LEAF_GREEN_SOFT}" stop-opacity="0.55"/>
+        <stop offset="55%" stop-color="${LEAF_GREEN}" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="${LEAF_GREEN}" stop-opacity="0"/>
+      </radialGradient>
+      <rect x="0" y="0" width="${width}" height="${height}" fill="url(#markGlow)"/>
 
-      <!-- Subtle leaf-green accent bar on the left edge -->
-      <rect x="0" y="0" width="14" height="${height}" fill="${LEAF_GREEN}"/>
+      <!-- Slim brand accent bar on the left edge -->
+      <rect x="0" y="0" width="12" height="${height}" fill="${LEAF_GREEN}"/>
 
-      <!-- Decorative scattered dots (organic, low-opacity) -->
-      <g fill="${LEAF_GREEN}" opacity="0.10">
-        <circle cx="${width - 120}" cy="${height - 90}" r="46"/>
-        <circle cx="${width - 230}" cy="${height - 150}" r="20"/>
-        <circle cx="${width - 70}" cy="${height - 200}" r="14"/>
-      </g>
+      <!-- Soft halo ring behind the leaf mark (no opaque card) -->
+      <circle cx="${markCx}" cy="${markCy}" r="${markR + 26}"
+        fill="none" stroke="${LEAF_GREEN}" stroke-opacity="0.16" stroke-width="2"/>
+      <circle cx="${markCx}" cy="${markCy}" r="${markR + 48}"
+        fill="none" stroke="${LEAF_GREEN}" stroke-opacity="0.08" stroke-width="2"/>
 
       <!-- Eyebrow / kicker -->
-      <text x="${textX}" y="${eyebrowY}"
+      <text x="${textX + 4}" y="162"
         font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif"
-        font-size="${eyebrowSize}" font-weight="600" letter-spacing="6"
-        fill="${LEAF_GREEN_DEEP}" opacity="0.9">KIDSWEAR · MADE GENTLE</text>
+        font-size="23" font-weight="700" letter-spacing="6"
+        fill="${LEAF_GREEN_DEEP}" opacity="0.92">KIDSWEAR · MADE GENTLE</text>
 
       <!-- Wordmark -->
-      <text x="${textX}" y="${wordmarkY}"
+      <text x="${textX}" y="296"
         font-family="Georgia, 'Times New Roman', serif"
-        font-size="${wordmarkSize}" font-weight="700" letter-spacing="2"
+        font-size="138" font-weight="700" letter-spacing="2"
         fill="url(#wordFill)">OHMS</text>
 
       <!-- Tagline -->
-      <text x="${textX + 4}" y="${taglineY}"
+      <text x="${textX + 4}" y="352"
         font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif"
-        font-size="${taglineSize}" font-weight="500" letter-spacing="1.5"
+        font-size="34" font-weight="500" letter-spacing="2"
         fill="${SUBTLE_INK}">Soft And Comfort</text>
 
-      <!-- Thin divider under the lockup -->
-      <rect x="${textX + 5}" y="${taglineY + 26}" width="120" height="4" rx="2" fill="${LEAF_GREEN}"/>
+      <!-- Coral divider -->
+      <rect x="${textX + 5}" y="388" width="96" height="5" rx="2.5" fill="${CORAL}"/>
+
+      <!-- Value headline (two lines for balance + legibility) -->
+      <text x="${textX}" y="470"
+        font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif"
+        font-size="44" font-weight="700" letter-spacing="0"
+        fill="${INK}">Soft &amp; comfy clothing</text>
+      <text x="${textX}" y="524"
+        font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif"
+        font-size="44" font-weight="700" letter-spacing="0"
+        fill="${INK}">for babies &amp; kids</text>
+
+      <!-- Location line -->
+      <text x="${textX + 2}" y="574"
+        font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif"
+        font-size="25" font-weight="500" letter-spacing="0.5"
+        fill="${SUBTLE_INK}">Knitted with love in Tirupur, India</text>
     </svg>`
   );
 }
 
 /**
- * public/og.png — 1200x630 social share card. Left-aligned wordmark + tagline,
- * leaf mark on the right inside a soft cream disc.
+ * public/og.png — 1200x630 social share card. Left-aligned editorial lockup,
+ * leaf mark on the right sitting directly on the gradient inside a soft halo.
  */
 async function makeOg(sharp, source) {
   const WIDTH = 1200;
   const HEIGHT = 630;
 
-  const overlay = ogOverlaySvg(WIDTH, HEIGHT, {
-    eyebrowSize: 24,
-    wordmarkSize: 150,
-    taglineSize: 38,
-    textX: 96,
-    baselineY: 340,
-  });
+  const markSize = 360;
+  const markR = markSize / 2;
+  const markCx = WIDTH - 248;
+  const markCy = Math.round(HEIGHT / 2);
+  const markTop = markCy - markR;
+  const markLeft = markCx - markR;
 
-  // Leaf mark on the right, seated inside a soft cream disc with a faint ring.
-  const markSize = 300;
-  const discSize = 380;
-  const disc = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${discSize}" height="${discSize}">` +
-      `<circle cx="${discSize / 2}" cy="${discSize / 2}" r="${discSize / 2 - 6}" fill="${CREAM}"/>` +
-      `<circle cx="${discSize / 2}" cy="${discSize / 2}" r="${discSize / 2 - 6}" fill="none" stroke="${LEAF_GREEN}" stroke-opacity="0.18" stroke-width="6"/>` +
-      `</svg>`
-  );
-  const mark = await markBuffer(sharp, source, markSize);
-
-  const discComposed = await sharp(disc)
-    .composite([{ input: mark, gravity: "center" }])
-    .png()
-    .toBuffer();
-
-  const discTop = Math.round((HEIGHT - discSize) / 2);
-  const discLeft = WIDTH - discSize - 110;
+  const overlay = ogOverlaySvg(WIDTH, HEIGHT, markCx, markCy, markR);
+  const mark = await circularMarkBuffer(sharp, source, markSize);
 
   await sharp(overlay)
-    .composite([{ input: discComposed, top: discTop, left: discLeft }])
+    .composite([{ input: mark, top: markTop, left: markLeft }])
     .png()
     .toFile(join(PUBLIC_DIR, "og.png"));
 }
 
 /**
- * public/og-square.png — 1080x1080 Instagram-style variant. Mark on top,
- * centered wordmark + tagline below.
+ * public/og-square.png — 1080x1080 Instagram-style variant. Centered stack:
+ * leaf mark (no white card) high, then eyebrow → OHMS + tagline → value
+ * headline → location line. Mirrors the wide card's styling.
  */
 async function makeOgSquare(sharp, source) {
   const SIZE = 1080;
 
-  // Centered composition: mark high, text stacked below center.
+  const markSize = 380;
+  const markR = markSize / 2;
+  const markCx = SIZE / 2;
+  const markCy = 290;
+  const markTop = markCy - markR;
+  const markLeft = Math.round(markCx - markR);
+
   const overlay = Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${SIZE}" height="${SIZE}">
-      <defs>
-        <linearGradient id="bgsq" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${CREAM}"/>
-          <stop offset="60%" stop-color="#f1f7e8"/>
-          <stop offset="100%" stop-color="#e3f0d2"/>
-        </linearGradient>
-        <radialGradient id="glowsq" cx="50%" cy="30%" r="55%">
-          <stop offset="0%" stop-color="${LEAF_GREEN_SOFT}" stop-opacity="0.40"/>
-          <stop offset="100%" stop-color="${LEAF_GREEN}" stop-opacity="0"/>
-        </radialGradient>
-        <linearGradient id="wordFillSq" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${LEAF_GREEN}"/>
-          <stop offset="100%" stop-color="${LEAF_GREEN_DEEP}"/>
-        </linearGradient>
-      </defs>
-      <rect x="0" y="0" width="${SIZE}" height="${SIZE}" fill="url(#bgsq)"/>
-      <rect x="0" y="0" width="${SIZE}" height="${SIZE}" fill="url(#glowsq)"/>
-      <g fill="${LEAF_GREEN}" opacity="0.09">
-        <circle cx="140" cy="${SIZE - 150}" r="60"/>
-        <circle cx="${SIZE - 150}" cy="${SIZE - 220}" r="26"/>
-      </g>
+      ${ogDefs()}
+      <rect x="0" y="0" width="${SIZE}" height="${SIZE}" fill="url(#bg)"/>
+      <rect x="0" y="0" width="${SIZE}" height="${SIZE}" fill="url(#dots)"/>
+      <radialGradient id="markGlowSq" cx="50%" cy="27%" r="46%">
+        <stop offset="0%" stop-color="${LEAF_GREEN_SOFT}" stop-opacity="0.52"/>
+        <stop offset="55%" stop-color="${LEAF_GREEN}" stop-opacity="0.12"/>
+        <stop offset="100%" stop-color="${LEAF_GREEN}" stop-opacity="0"/>
+      </radialGradient>
+      <rect x="0" y="0" width="${SIZE}" height="${SIZE}" fill="url(#markGlowSq)"/>
 
-      <text x="${SIZE / 2}" y="690" text-anchor="middle"
+      <!-- Soft halo rings behind the mark -->
+      <circle cx="${markCx}" cy="${markCy}" r="${markR + 30}"
+        fill="none" stroke="${LEAF_GREEN}" stroke-opacity="0.16" stroke-width="2"/>
+      <circle cx="${markCx}" cy="${markCy}" r="${markR + 56}"
+        fill="none" stroke="${LEAF_GREEN}" stroke-opacity="0.08" stroke-width="2"/>
+
+      <text x="${SIZE / 2}" y="612" text-anchor="middle"
         font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif"
-        font-size="30" font-weight="600" letter-spacing="8"
-        fill="${LEAF_GREEN_DEEP}" opacity="0.9">KIDSWEAR · MADE GENTLE</text>
+        font-size="27" font-weight="700" letter-spacing="8"
+        fill="${LEAF_GREEN_DEEP}" opacity="0.92">KIDSWEAR · MADE GENTLE</text>
 
-      <text x="${SIZE / 2}" y="850" text-anchor="middle"
+      <text x="${SIZE / 2}" y="770" text-anchor="middle"
         font-family="Georgia, 'Times New Roman', serif"
-        font-size="170" font-weight="700" letter-spacing="3"
-        fill="url(#wordFillSq)">OHMS</text>
+        font-size="158" font-weight="700" letter-spacing="3"
+        fill="url(#wordFill)">OHMS</text>
 
-      <text x="${SIZE / 2}" y="920" text-anchor="middle"
+      <text x="${SIZE / 2}" y="828" text-anchor="middle"
         font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif"
-        font-size="42" font-weight="500" letter-spacing="2"
+        font-size="38" font-weight="500" letter-spacing="2"
         fill="${SUBTLE_INK}">Soft And Comfort</text>
+
+      <!-- Coral divider (centered) -->
+      <rect x="${SIZE / 2 - 48}" y="862" width="96" height="5" rx="2.5" fill="${CORAL}"/>
+
+      <text x="${SIZE / 2}" y="952" text-anchor="middle"
+        font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif"
+        font-size="40" font-weight="700"
+        fill="${INK}">Soft &amp; comfy clothing for babies &amp; kids</text>
+
+      <text x="${SIZE / 2}" y="1004" text-anchor="middle"
+        font-family="'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif"
+        font-size="25" font-weight="500" letter-spacing="0.5"
+        fill="${SUBTLE_INK}">Knitted with love in Tirupur, India</text>
     </svg>`
   );
 
-  const markSize = 360;
-  const discSize = 440;
-  const disc = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${discSize}" height="${discSize}">` +
-      `<circle cx="${discSize / 2}" cy="${discSize / 2}" r="${discSize / 2 - 8}" fill="${CREAM}"/>` +
-      `<circle cx="${discSize / 2}" cy="${discSize / 2}" r="${discSize / 2 - 8}" fill="none" stroke="${LEAF_GREEN}" stroke-opacity="0.18" stroke-width="7"/>` +
-      `</svg>`
-  );
-  const mark = await markBuffer(sharp, source, markSize);
-  const discComposed = await sharp(disc)
-    .composite([{ input: mark, gravity: "center" }])
-    .png()
-    .toBuffer();
-
-  const discTop = 150;
-  const discLeft = Math.round((SIZE - discSize) / 2);
+  const mark = await circularMarkBuffer(sharp, source, markSize);
 
   await sharp(overlay)
-    .composite([{ input: discComposed, top: discTop, left: discLeft }])
+    .composite([{ input: mark, top: markTop, left: markLeft }])
     .png()
     .toFile(join(PUBLIC_DIR, "og-square.png"));
 }

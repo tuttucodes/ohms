@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Truck, Leaf, ShieldCheck, RefreshCw } from "lucide-react";
 import { Hero } from "@/components/home/Hero";
@@ -11,8 +12,13 @@ import {
   getNewArrivals,
   queryProducts,
 } from "@/lib/data/products";
-import { SHOP_NAV, AGE_GROUPS } from "@/lib/config";
+import { SHOP_NAV, AGE_GROUPS, siteConfig } from "@/lib/config";
 import { productImage } from "@/lib/utils";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+  description: `${siteConfig.description} Shop soft cotton bodysuits, nightwear, innerwear and more — gentle on babies, easy on parents.`,
+};
 
 export default function HomePage() {
   const bestSellers = getBestSellers(8);
